@@ -87,7 +87,7 @@ pub mod query {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
     use cosmwasm_std::{coins, from_json};
 
     #[test]
@@ -95,7 +95,8 @@ mod tests {
         let mut deps = mock_dependencies();
 
         let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(1000, "earth"));
+        let creator = deps.api.addr_make("creator");
+        let info = message_info(&creator, &coins(1000, "earth"));
 
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -112,11 +113,13 @@ mod tests {
         let mut deps = mock_dependencies();
 
         let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
+        let creator = deps.api.addr_make("creator");
+        let info = message_info(&creator, &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // beneficiary can release it
-        let info = mock_info("anyone", &coins(2, "token"));
+        let beneficiary = deps.api.addr_make("anyone");
+        let info = message_info(&beneficiary, &coins(2, "token"));
         let msg = ExecuteMsg::Increment {};
         let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -131,11 +134,13 @@ mod tests {
         let mut deps = mock_dependencies();
 
         let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
+        let creator = deps.api.addr_make("creator");
+        let info = message_info(&creator, &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // beneficiary can release it
-        let unauth_info = mock_info("anyone", &coins(2, "token"));
+        let unauth = deps.api.addr_make("anyone");
+        let unauth_info = message_info(&unauth, &coins(2, "token"));
         let msg = ExecuteMsg::Reset { count: 5 };
         let res = execute(deps.as_mut(), mock_env(), unauth_info, msg);
         match res {
@@ -144,7 +149,7 @@ mod tests {
         }
 
         // only the original creator can reset the counter
-        let auth_info = mock_info("creator", &coins(2, "token"));
+        let auth_info = message_info(&creator, &coins(2, "token"));
         let msg = ExecuteMsg::Reset { count: 5 };
         let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
 
